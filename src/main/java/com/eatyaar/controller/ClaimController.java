@@ -57,4 +57,11 @@ public class ClaimController {
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(claimService.markPickedUp(id, currentUser));
     }
+
+    // GET /api/claims/received — Giver sees all claims on their listings
+    @GetMapping("/received")
+    public ResponseEntity<List<ClaimResponse>> getReceivedClaims(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(claimService.getReceivedClaims(currentUser));
+    }
 }
