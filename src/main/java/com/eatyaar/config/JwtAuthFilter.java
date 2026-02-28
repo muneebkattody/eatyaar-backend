@@ -28,27 +28,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        try {
+            String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+
+                if (jwtUtil.validateToken(token)) {
+                    Long userId = jwtUtil.extractUserId(token);
+                    userRepository.findById(userId).ifPresent(user -> {
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(user, null, List.of());
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    });
+                }
+            }
+        } catch (Exception e) {
+            // Never block the request due to token parsing errors
+            // Just clear security context and continue
+            SecurityContextHolder.clearContext();
         }
-
-        String token = authHeader.substring(7); // remove "Bearer " prefix
-
-        if (!jwtUtil.validateToken(token)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        Long userId = jwtUtil.extractUserId(token);
-
-        userRepository.findById(userId).ifPresent(user -> {
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(user, null, List.of());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-        });
 
         filterChain.doFilter(request, response);
     }
