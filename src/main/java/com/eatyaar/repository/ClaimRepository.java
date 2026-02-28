@@ -24,4 +24,6 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
     // Get all claims on listings posted by a specific user (giver's inbox)
     @Query("SELECT c FROM Claim c WHERE c.listing.postedBy = :user")
     List<Claim> findClaimsReceivedByUser(@Param("user") User user);
+
+    long countByStatus(Claim.ClaimStatus status);
 }
