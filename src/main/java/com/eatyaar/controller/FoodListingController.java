@@ -27,7 +27,6 @@ public class FoodListingController {
         return ResponseEntity.ok(listingService.createListing(currentUser, request));
     }
 
-    // GET /api/listings?city=pune — Browse by city (public)
     @GetMapping
     public ResponseEntity<List<ListingResponse>> getListings(
             @RequestParam(required = false) String city,
@@ -39,8 +38,15 @@ public class FoodListingController {
         if (city != null) {
             return ResponseEntity.ok(listingService.getListingsByCity(city));
         }
-        return ResponseEntity.badRequest().build();
+        // No filter — return all available
+        return ResponseEntity.ok(listingService.getAllAvailableListings());
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<ListingResponse>> getAllListings() {
+        return ResponseEntity.ok(listingService.getAllAvailableListings());
+    }
+
 
     // GET /api/listings/my — My posted listings (auth required)
     @GetMapping("/my")

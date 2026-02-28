@@ -120,4 +120,13 @@ public class FoodListingService {
                 .postedByTrustScore(listing.getPostedBy().getTrustScore())
                 .build();
     }
+
+    // Get all available listings (no city filter)
+    public List<ListingResponse> getAllAvailableListings() {
+        return listingRepository
+                .findByStatus(ListingStatus.AVAILABLE)
+                .stream()
+                .map(l -> toResponse(l, false))
+                .collect(Collectors.toList());
+    }
 }
