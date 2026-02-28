@@ -154,4 +154,13 @@ public class ClaimService {
                 .claimedByName(claim.getClaimedBy().getName())
                 .build();
     }
+
+    // Get all claims received on giver's listings
+    public List<ClaimResponse> getReceivedClaims(User currentUser) {
+        return claimRepository.findClaimsReceivedByUser(currentUser)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
 }

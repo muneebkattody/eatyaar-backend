@@ -4,6 +4,8 @@ import com.eatyaar.entity.Claim;
 import com.eatyaar.entity.FoodListing;
 import com.eatyaar.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -18,4 +20,8 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
 
     // Check if user already claimed a listing (prevent duplicate claims)
     boolean existsByListingAndClaimedBy(FoodListing listing, User claimedBy);
+
+    // Get all claims on listings posted by a specific user (giver's inbox)
+    @Query("SELECT c FROM Claim c WHERE c.listing.postedBy = :user")
+    List<Claim> findClaimsReceivedByUser(@Param("user") User user);
 }
