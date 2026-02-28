@@ -19,6 +19,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final OtpStore otpStore;
     private final JwtUtil jwtUtil;
+    private final EmailService emailService;
 
     public void sendOtp(CompleteProfileRequest.SendOtpRequest request) {
         String otp = generateOtp();
@@ -29,6 +30,7 @@ public class AuthService {
         System.out.println("=============================");
         System.out.println("OTP for " + request.getPhone() + " : " + otp);
         System.out.println("=============================");
+        emailService.sendOtp(request.getPhone(), otp);
     }
 
     public AuthResponse verifyOtp(VerifyOtpRequest request) {
