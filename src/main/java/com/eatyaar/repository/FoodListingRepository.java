@@ -18,4 +18,7 @@ public interface FoodListingRepository extends JpaRepository<FoodListing, Long> 
 
     // Get all listings posted by a specific user
     List<FoodListing> findByPostedBy(User postedBy);
+
+    // Get ALL available listings across all cities
+    List<FoodListing> findByStatus(ListingStatus status);
 }
