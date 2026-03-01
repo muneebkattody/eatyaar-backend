@@ -4,7 +4,7 @@
 
 EatYaar is a community food sharing platform that connects people with surplus food to people who want it — no money, no delivery, no middlemen. A student in a hostel can claim biryani from a wedding two streets away. A home cook can share extra rotis with a neighbor. No stigma. No awkwardness. Just food moving from where it's excess to where it's wanted.
 
-🌐 **Live:** [eatyaar.in](https://eatyaar.vercel.app)
+🌐 **Live:** [eatyaar.in](https://eatyaar.in)
 
 ---
 
