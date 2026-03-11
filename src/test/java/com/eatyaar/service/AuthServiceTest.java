@@ -87,7 +87,7 @@ class AuthServiceTest {
 
         AuthResponse response = authService.verifyOtp(request);
 
-        assertThat(response.isNewUser()).isTrue();
+        assertThat(response.getIsNewUser()).isTrue();
         assertThat(response.getToken()).isEqualTo(TEST_TOKEN);
         assertThat(response.getEmail()).isEqualTo(TEST_EMAIL);
         verify(userRepository).save(any(User.class));
@@ -110,9 +110,9 @@ class AuthServiceTest {
 
         AuthResponse response = authService.verifyOtp(request);
 
-        assertThat(response.isNewUser()).isFalse();
+        assertThat(response.getIsNewUser()).isFalse();
         assertThat(response.getUserId()).isEqualTo(1L);
-        verify(userRepository, never()).save(any()); // should NOT create new user
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -146,7 +146,7 @@ class AuthServiceTest {
 
         authService.verifyOtp(request);
 
-        verify(otpStore).clearOtp(TEST_EMAIL); // must be cleared
+        verify(otpStore).clearOtp(TEST_EMAIL);
     }
 
     // ─── completeProfile ────────────────────────────────────────
