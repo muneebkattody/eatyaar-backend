@@ -8,6 +8,7 @@ import com.eatyaar.entity.User;
 import com.eatyaar.repository.UserRepository;
 import com.eatyaar.util.JwtUtil;
 import com.eatyaar.util.OtpStore;
+import com.eatyaar.util.RateLimiter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,11 +31,12 @@ class AuthServiceTest {
     @Mock private OtpStore otpStore;
     @Mock private JwtUtil jwtUtil;
     @Mock private EmailService emailService;
+    @Mock private RateLimiter rateLimiter;
 
     @InjectMocks
     private AuthService authService;
 
-    private static final String TEST_PHONE = "9876543210";
+    private static final String TEST_EMAIL = "test@example.com";
     private static final String TEST_OTP   = "123456";
     private static final String TEST_TOKEN = "jwt.test.token";
 
@@ -44,23 +46,23 @@ class AuthServiceTest {
     @DisplayName("sendOtp: saves OTP and sends email")
     void sendOtp_savesAndSendsEmail() {
         SendOtpRequest request = new SendOtpRequest();
-        request.setPhone(TEST_PHONE);
+        request.setEmail(TEST_EMAIL);
 
         authService.sendOtp(request);
 
-        verify(otpStore, times(1)).saveOtp(eq(TEST_PHONE), anyString());
-        verify(emailService, times(1)).sendOtp(eq(TEST_PHONE), anyString());
+        verify(otpStore, times(1)).saveOtp(eq(TEST_EMAIL), anyString());
+        verify(emailService, times(1)).sendOtp(eq(TEST_EMAIL), anyString());
     }
 
     @Test
     @DisplayName("sendOtp: generates 6-digit OTP")
     void sendOtp_generatesSixDigitOtp() {
         SendOtpRequest request = new SendOtpRequest();
-        request.setPhone(TEST_PHONE);
+        request.setEmail(TEST_EMAIL);
 
         authService.sendOtp(request);
 
-        verify(otpStore).saveOtp(eq(TEST_PHONE), argThat(otp ->
+        verify(otpStore).saveOtp(eq(TEST_EMAIL), argThat(otp ->
                 otp.length() == 6 && otp.matches("\\d{6}")
         ));
     }
@@ -71,11 +73,11 @@ class AuthServiceTest {
     @DisplayName("verifyOtp: new user — creates account and returns isNewUser=true")
     void verifyOtp_newUser_createsAccount() {
         VerifyOtpRequest request = new VerifyOtpRequest();
-        request.setPhone(TEST_PHONE);
+        request.setEmail(TEST_EMAIL);
         request.setOtp(TEST_OTP);
 
-        when(otpStore.verifyOtp(TEST_PHONE, TEST_OTP)).thenReturn(true);
-        when(userRepository.existsByPhone(TEST_PHONE)).thenReturn(false);
+        when(otpStore.verifyOtp(TEST_EMAIL, TEST_OTP)).thenReturn(true);
+        when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(inv -> {
             User u = inv.getArgument(0);
             u.setId(1L);
@@ -87,23 +89,23 @@ class AuthServiceTest {
 
         assertThat(response.isNewUser()).isTrue();
         assertThat(response.getToken()).isEqualTo(TEST_TOKEN);
-        assertThat(response.getPhone()).isEqualTo(TEST_PHONE);
+        assertThat(response.getEmail()).isEqualTo(TEST_EMAIL);
         verify(userRepository).save(any(User.class));
-        verify(otpStore).clearOtp(TEST_PHONE);
+        verify(otpStore).clearOtp(TEST_EMAIL);
     }
 
     @Test
     @DisplayName("verifyOtp: existing user — does not create account, returns isNewUser=false")
     void verifyOtp_existingUser_doesNotCreateAccount() {
         VerifyOtpRequest request = new VerifyOtpRequest();
-        request.setPhone(TEST_PHONE);
+        request.setEmail(TEST_EMAIL);
         request.setOtp(TEST_OTP);
 
-        User existingUser = User.builder().id(1L).phone(TEST_PHONE).name("Test User").isVerified(true).build();
+        User existingUser = User.builder().id(1L).email(TEST_EMAIL).name("Test User").isVerified(true).build();
 
-        when(otpStore.verifyOtp(TEST_PHONE, TEST_OTP)).thenReturn(true);
-        when(userRepository.existsByPhone(TEST_PHONE)).thenReturn(true);
-        when(userRepository.findByPhone(TEST_PHONE)).thenReturn(Optional.of(existingUser));
+        when(otpStore.verifyOtp(TEST_EMAIL, TEST_OTP)).thenReturn(true);
+        when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(true);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(existingUser));
         when(jwtUtil.generateToken(anyLong(), anyString())).thenReturn(TEST_TOKEN);
 
         AuthResponse response = authService.verifyOtp(request);
@@ -117,10 +119,10 @@ class AuthServiceTest {
     @DisplayName("verifyOtp: invalid OTP — throws exception")
     void verifyOtp_invalidOtp_throwsException() {
         VerifyOtpRequest request = new VerifyOtpRequest();
-        request.setPhone(TEST_PHONE);
+        request.setEmail(TEST_EMAIL);
         request.setOtp("000000");
 
-        when(otpStore.verifyOtp(TEST_PHONE, "000000")).thenReturn(false);
+        when(otpStore.verifyOtp(TEST_EMAIL, "000000")).thenReturn(false);
 
         assertThatThrownBy(() -> authService.verifyOtp(request))
                 .isInstanceOf(RuntimeException.class)
@@ -133,18 +135,18 @@ class AuthServiceTest {
     @DisplayName("verifyOtp: clears OTP after successful verification")
     void verifyOtp_clearsOtpAfterSuccess() {
         VerifyOtpRequest request = new VerifyOtpRequest();
-        request.setPhone(TEST_PHONE);
+        request.setEmail(TEST_EMAIL);
         request.setOtp(TEST_OTP);
 
-        User user = User.builder().id(1L).phone(TEST_PHONE).isVerified(true).build();
-        when(otpStore.verifyOtp(TEST_PHONE, TEST_OTP)).thenReturn(true);
-        when(userRepository.existsByPhone(TEST_PHONE)).thenReturn(true);
-        when(userRepository.findByPhone(TEST_PHONE)).thenReturn(Optional.of(user));
+        User user = User.builder().id(1L).email(TEST_EMAIL).isVerified(true).build();
+        when(otpStore.verifyOtp(TEST_EMAIL, TEST_OTP)).thenReturn(true);
+        when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(true);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(jwtUtil.generateToken(anyLong(), anyString())).thenReturn(TEST_TOKEN);
 
         authService.verifyOtp(request);
 
-        verify(otpStore).clearOtp(TEST_PHONE); // must be cleared
+        verify(otpStore).clearOtp(TEST_EMAIL); // must be cleared
     }
 
     // ─── completeProfile ────────────────────────────────────────
@@ -152,12 +154,12 @@ class AuthServiceTest {
     @Test
     @DisplayName("completeProfile: updates user fields correctly")
     void completeProfile_updatesFields() {
-        User user = User.builder().id(1L).phone(TEST_PHONE).build();
+        User user = User.builder().id(1L).email(TEST_EMAIL).build();
         CompleteProfileRequest request = new CompleteProfileRequest();
         request.setName("Rahul");
+        request.setPhone("9876543210");
         request.setCity("Pune");
         request.setArea("Koregaon Park");
-        request.setEmail("rahul@gmail.com");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -165,9 +167,9 @@ class AuthServiceTest {
         User updated = authService.completeProfile(1L, request);
 
         assertThat(updated.getName()).isEqualTo("Rahul");
+        assertThat(updated.getPhone()).isEqualTo("9876543210");
         assertThat(updated.getCity()).isEqualTo("Pune");
         assertThat(updated.getArea()).isEqualTo("Koregaon Park");
-        assertThat(updated.getEmail()).isEqualTo("rahul@gmail.com");
     }
 
     @Test

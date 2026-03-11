@@ -31,10 +31,10 @@ class AuthControllerIntegrationTest {
     @MockBean  private AuthService authService;
 
     @Test
-    @DisplayName("POST /api/auth/send-otp: valid phone returns 200")
-    void sendOtp_validPhone_returns200() throws Exception {
+    @DisplayName("POST /api/auth/send-otp: valid email returns 200")
+    void sendOtp_validEmail_returns200() throws Exception {
         SendOtpRequest request = new SendOtpRequest();
-        request.setPhone("9876543210");
+        request.setEmail("test@example.com");
 
         doNothing().when(authService).sendOtp(any());
 
@@ -42,14 +42,14 @@ class AuthControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("9876543210")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("test@example.com")));
     }
 
     @Test
-    @DisplayName("POST /api/auth/send-otp: invalid phone returns 400")
-    void sendOtp_invalidPhone_returns400() throws Exception {
+    @DisplayName("POST /api/auth/send-otp: invalid email returns 400")
+    void sendOtp_invalidEmail_returns400() throws Exception {
         SendOtpRequest request = new SendOtpRequest();
-        request.setPhone("123"); // invalid — not 10 digits
+        request.setEmail("not-an-email"); // invalid format
 
         mockMvc.perform(post("/api/auth/send-otp")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -58,8 +58,8 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/auth/send-otp: missing phone returns 400")
-    void sendOtp_missingPhone_returns400() throws Exception {
+    @DisplayName("POST /api/auth/send-otp: missing email returns 400")
+    void sendOtp_missingEmail_returns400() throws Exception {
         mockMvc.perform(post("/api/auth/send-otp")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -70,10 +70,10 @@ class AuthControllerIntegrationTest {
     @DisplayName("POST /api/auth/verify-otp: valid request returns token")
     void verifyOtp_validRequest_returnsToken() throws Exception {
         VerifyOtpRequest request = new VerifyOtpRequest();
-        request.setPhone("9876543210");
+        request.setEmail("test@example.com");
         request.setOtp("123456");
 
-        AuthResponse authResponse = new AuthResponse("mock.jwt.token", 1L, "9876543210", true);
+        AuthResponse authResponse = new AuthResponse("mock.jwt.token", 1L, "test@example.com", true);
         when(authService.verifyOtp(any())).thenReturn(authResponse);
 
         mockMvc.perform(post("/api/auth/verify-otp")
@@ -81,16 +81,25 @@ class AuthControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("mock.jwt.token"))
-                .andExpect(jsonPath("$.phone").value("9876543210"))
+                .andExpect(jsonPath("$.email").value("test@example.com"))
                 .andExpect(jsonPath("$.newUser").value(true));
     }
 
     @Test
-    @DisplayName("POST /api/auth/verify-otp: missing fields returns 400")
-    void verifyOtp_missingFields_returns400() throws Exception {
+    @DisplayName("POST /api/auth/verify-otp: missing OTP returns 400")
+    void verifyOtp_missingOtp_returns400() throws Exception {
         mockMvc.perform(post("/api/auth/verify-otp")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\": \"9876543210\"}")) // missing otp
+                        .content("{\"email\": \"test@example.com\"}")) // missing otp
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/verify-otp: missing email returns 400")
+    void verifyOtp_missingEmail_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/verify-otp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"otp\": \"123456\"}")) // missing email
                 .andExpect(status().isBadRequest());
     }
 
@@ -99,7 +108,7 @@ class AuthControllerIntegrationTest {
     void completeProfile_unauthenticated_returns403() throws Exception {
         mockMvc.perform(patch("/api/auth/profile")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Test\",\"city\":\"Pune\",\"area\":\"Kothrud\"}"))
+                        .content("{\"name\":\"Test\",\"phone\":\"9876543210\",\"city\":\"Pune\",\"area\":\"Kothrud\"}"))
                 .andExpect(status().isForbidden());
     }
 }
