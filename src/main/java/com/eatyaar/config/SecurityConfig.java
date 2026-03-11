@@ -55,6 +55,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(Arrays.asList(
                 "https://www.eatyaar.in",
                 "https://eatyaar.in",
+                "capacitor://localhost",    // Android app
+                "https://localhost",
                 "http://localhost:5173"
         ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
