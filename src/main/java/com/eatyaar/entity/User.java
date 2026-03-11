@@ -20,11 +20,17 @@ public class User {
     @Column(nullable = true)
     private String name;
 
-    @Column(nullable = false, unique = true)
-    private String phone;
+//    @Column(nullable = false, unique = true)
+//    private String phone;
+//
+//    @Column
+//    private String email;
 
-    @Column
+    @Column(nullable = false, unique = true)
     private String email;
+
+    @Column(nullable = true)
+    private String phone;
 
     @Column
     private String city;

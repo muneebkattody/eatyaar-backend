@@ -13,24 +13,34 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${mail.test.recipient}")
-    private String testRecipient; // your inbox where OTPs land
+//    @Value("${mail.test.recipient}")
+//    private String testRecipient; // your inbox where OTPs land
 
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    public void sendOtp(String phone, String otp) {
+//    public void sendOtp(String phone, String otp) {
+//        SimpleMailMessage message = new SimpleMailMessage();
+//        message.setFrom(fromEmail);
+//        message.setTo(testRecipient);
+//        message.setSubject("EatYaar OTP - " + phone);
+//        message.setText(
+//                "Hello,\n\n" +
+//                        "OTP requested for phone number: " + phone + "\n\n" +
+//                        "Your OTP is: " + otp + "\n\n" +
+//                        "This OTP is valid for 5 minutes.\n\n" +
+//                        "— EatYaar Team"
+//        );
+//        mailSender.send(message);
+//    }
+
+    public void sendOtp(String email, String otp) {
+        // send directly to email — no lookup needed
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
-        message.setTo(testRecipient);
-        message.setSubject("EatYaar OTP - " + phone);
-        message.setText(
-                "Hello,\n\n" +
-                        "OTP requested for phone number: " + phone + "\n\n" +
-                        "Your OTP is: " + otp + "\n\n" +
-                        "This OTP is valid for 5 minutes.\n\n" +
-                        "— EatYaar Team"
-        );
+        message.setTo(email);
+        message.setSubject("Your Eatyaar OTP");
+        message.setText("Your OTP is: " + otp + "\n\nValid for 10 minutes.");
         mailSender.send(message);
     }
 }

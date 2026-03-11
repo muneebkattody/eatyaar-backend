@@ -26,7 +26,7 @@ public class AuthController {
     @PostMapping("/send-otp")
     public ResponseEntity<String> sendOtp(@Valid @RequestBody SendOtpRequest request) {
         authService.sendOtp(request);
-        return ResponseEntity.ok("OTP sent to " + request.getPhone());
+        return ResponseEntity.ok("OTP sent to " + request.getEmail());
     }
 
     // Step 2 — Verify OTP and get JWT token

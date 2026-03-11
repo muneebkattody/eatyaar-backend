@@ -28,35 +28,81 @@ public class AuthService {
     private final EmailService emailService;
     private final RateLimiter rateLimiter;
 
-    public void sendOtp(SendOtpRequest request) {
-        String phone = request.getPhone();
+//    public void sendOtp(SendOtpRequest request) {
+//        String phone = request.getPhone();
+//
+//        // Rate limit: max 3 OTPs per 10 minutes per phone
+//        rateLimiter.checkLimit(phone);
+//
+//        String otp = generateOtp();
+//        otpStore.saveOtp(phone, otp);
+//        emailService.sendOtp(phone, otp);
+//
+//        log.info("OTP sent for phone: {}***", phone.substring(0, 5));
+//    }
+//
+//    public AuthResponse verifyOtp(VerifyOtpRequest request) {
+//        String phone = request.getPhone();
+//        boolean valid = otpStore.verifyOtp(phone, request.getOtp());
+//
+//        if (!valid) {
+//            throw new InvalidOtpException();
+//        }
+//
+//        otpStore.clearOtp(phone);
+//
+//        boolean isNewUser = !userRepository.existsByPhone(phone);
+//        User user;
+//
+//        if (isNewUser) {
+//            user = User.builder()
+//                    .phone(phone)
+//                    .name("")
+//                    .isVerified(true)
+//                    .trustScore(0.0)
+//                    .totalGiven(0)
+//                    .totalTaken(0)
+//                    .build();
+//            userRepository.save(user);
+//            log.info("New user registered: {}***", phone.substring(0, 5));
+//        } else {
+//            user = userRepository.findByPhone(phone)
+//                    .orElseThrow(() -> new ResourceNotFoundException("User"));
+//            log.info("Existing user logged in: {}***", phone.substring(0, 5));
+//        }
+//
+//        String token = jwtUtil.generateToken(user.getId(), user.getPhone());
+//        return new AuthResponse(token, user.getId(), user.getPhone(), isNewUser);
+//    }
 
-        // Rate limit: max 3 OTPs per 10 minutes per phone
-        rateLimiter.checkLimit(phone);
+    public void sendOtp(SendOtpRequest request) {
+        String email = request.getEmail();
+
+        rateLimiter.checkLimit(email);
 
         String otp = generateOtp();
-        otpStore.saveOtp(phone, otp);
-        emailService.sendOtp(phone, otp);
+        otpStore.saveOtp(email, otp);
+        emailService.sendOtp(email, otp);  // pass email directly now
 
-        log.info("OTP sent for phone: {}***", phone.substring(0, 5));
+        log.info("OTP sent to email: {}", email);
     }
 
     public AuthResponse verifyOtp(VerifyOtpRequest request) {
-        String phone = request.getPhone();
-        boolean valid = otpStore.verifyOtp(phone, request.getOtp());
+        String email = request.getEmail();
+        boolean valid = otpStore.verifyOtp(email, request.getOtp());
 
         if (!valid) {
             throw new InvalidOtpException();
         }
 
-        otpStore.clearOtp(phone);
+        otpStore.clearOtp(email);
 
-        boolean isNewUser = !userRepository.existsByPhone(phone);
+        boolean isNewUser = !userRepository.existsByEmail(email);
         User user;
 
         if (isNewUser) {
             user = User.builder()
-                    .phone(phone)
+                    .email(email)
                     .name("")
                     .isVerified(true)
                     .trustScore(0.0)
@@ -64,15 +110,15 @@ public class AuthService {
                     .totalTaken(0)
                     .build();
             userRepository.save(user);
-            log.info("New user registered: {}***", phone.substring(0, 5));
+            log.info("New user registered: {}", email);
         } else {
-            user = userRepository.findByPhone(phone)
+            user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new ResourceNotFoundException("User"));
-            log.info("Existing user logged in: {}***", phone.substring(0, 5));
+            log.info("Existing user logged in: {}", email);
         }
 
-        String token = jwtUtil.generateToken(user.getId(), user.getPhone());
-        return new AuthResponse(token, user.getId(), user.getPhone(), isNewUser);
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail());
+        return new AuthResponse(token, user.getId(), user.getEmail(), isNewUser);
     }
 
     public User completeProfile(Long userId, CompleteProfileRequest request) {
@@ -80,7 +126,7 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         user.setName(request.getName());
-        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
         user.setCity(request.getCity());
         user.setArea(request.getArea());
 

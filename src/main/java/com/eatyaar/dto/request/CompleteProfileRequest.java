@@ -18,6 +18,9 @@ public class CompleteProfileRequest {
     @NotBlank(message = "Area is required")
     private String area;
 
+    @Pattern(regexp = "^[6-9]\\d{9}$", message = "Enter a valid 10-digit Indian mobile number")
+    private String phone;
+
     @Data
     public static class SendOtpRequest {
 
